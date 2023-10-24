@@ -25,7 +25,7 @@ def search_proc():
             uidl = lines[8].split("\t")
             puid = uidl[1].strip("\n")
             if int(puid) == uid:
-                info.update({name: uid})
+                info.update({name: proc.stem})
     return info
 
 def main():

@@ -7,9 +7,11 @@
 #include "ugid_info.h"
 
 
-/* procuall.c: all process being run by a user */
+/* procuall.c: all process being run by a user 
+ *
+ * usage: procuall <username>
+ * */
 
-#define LFNAME 256
 #define MAXLINE 512
 #define LPID 5
 
@@ -42,17 +44,15 @@ main (int argc, char* argv[])
     printf("user: %s\tuid: %d\n", uname, uid);
 
     DIR* dirp;
-    char* proc = "/proc";
-    dirp = opendir(proc);
     struct dirent* dp;
     char* fname;
-    int size = 0;
     FILE* fp;
     int fd;
     char* lone;
-
     struct stat sb;
+    int size = 0;
 
+    dirp = opendir("/proc");
     if (dirp) {
         errno = 0;
         while ((dp = readdir(dirp)) != NULL) {
@@ -64,13 +64,12 @@ main (int argc, char* argv[])
                     return -1; /* just cheese it! */
                 }
                 if (uid == sb.st_uid) {
-                    printf("pid :\t%s\n", dp->d_name);
                     lone = fgetLine(MAXLINE, fp);
-                    printf("%s\n", lone);
+                    printf("%-24s pid:%-30.30s\n", lone, dp->d_name);
                 }
             }
         }
         closedir(dirp);
-    }    
+    }
     return 0;
 }
