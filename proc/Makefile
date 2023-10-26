@@ -1,7 +1,7 @@
 .POSIX:
 .SUFFIXES:
 CC := gcc
-CFLAGS := -g3
+CFLAGS := -g3 -Wall -Werror -Wextra
 LDFLAGS :=
 LDLIBS := -ladio
 
