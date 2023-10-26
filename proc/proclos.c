@@ -1,7 +1,7 @@
 /* proclos: test what happens if a process disappears between the call to
  *
  * program will attempt to read /proc/$PID/status file, but the process with
- * $PID will be killed between the call to readdir and the call to fopen on the 
+ * $PID will be killed between the call to readdir and the call to fopen on the
  * /proc/$PID/status file.
  */
 #include <dirent.h>
@@ -16,11 +16,11 @@
 #define LPID 5
 #define PROC "/proc"
 
-/* check that string s contains only contiguous integer characters */
+/* check that string s is a contiguous array of integer characters */
 bool s_isinteger(const char* s) {
     bool result = (*s != '\0');
     while (*s != '\0') {
-        if (('9' < *s) && ('0' > *s)) {
+        if ((*s < '0') || (*s > '9')) {
             return false;
         }
         s++;
@@ -62,10 +62,12 @@ int main(int argc, char* argv[]) {
     if (dirp) {
         errno = 0;
         if ((dp = readdir(dirp)) != NULL) {
-            printf("e1: %d\n", errno);
             sleep(time); /* Sleep while the process gets killed */
             fp = fopen(fname, "r");
-            printf("e2: %d\n", errno);
+            if (fp == NULL) {
+                fprintf(stderr, "Error: fopen failed to complete with code %d\n", errno);
+                exit(ESRCH); /* Process not found */
+            }
             fd = fileno(fp);
             if (fstat(fd, &sb) == -1) {
                 return -1; /* just cheese it! */
