@@ -7,19 +7,21 @@
 #include "ugid_info.h"
 
 
-/* procuall.c: all process being run by a user 
+/* procuall.c: all process being run by a user
  *
  * usage: procuall <username>
  * */
 
 #define MAXLINE 512
 #define LPID 5
+#define PROC "/proc"
 
-int s_isdigit(const char* s) {
-    int result = 0;
+/* check that string s is a contiguous array of integer characters */
+bool s_isinteger(const char* s) {
+    bool result = (*s != '\0');
     while (*s != '\0') {
-        if (('0' <= *s) && ('9' >= *s)) {
-            result = 1;
+        if ((*s < '0') || (*s > '9')) {
+            return false;
         }
         s++;
     }
@@ -29,7 +31,7 @@ int s_isdigit(const char* s) {
 char*
 make_filename(const char* pid) {
     char* fname;
-    if (s_isdigit(pid)) {
+    if (s_isinteger(pid)) {
         sprintf(fname, "/proc/%s/status", pid);
         return fname;
     }
@@ -52,21 +54,27 @@ main (int argc, char* argv[])
     struct stat sb;
     int size = 0;
 
-    dirp = opendir("/proc");
+    dirp = opendir(PROC);
     if (dirp) {
         errno = 0;
         while ((dp = readdir(dirp)) != NULL) {
             fname = make_filename(dp->d_name);
-            if (fname) {
+            if (access(fname, F_OK) == 0) {
                 fp = fopen(fname, "r");
-                fd = fileno(fp);
-                if (fstat(fd, &sb) == -1) {
-                    return -1; /* just cheese it! */
+                if (fp == NULL) { /* Entered a bad state */
+                    fprintf(stderr, "Error: fopen attempted read on %s, returned %d", fname, errno);
+                } else {
+                    fd = fileno(fp);
+                    if (fstat(fd, &sb) == -1) {
+                        return -1; /* just cheese it! */
+                    }
+                    if (uid == sb.st_uid) {
+                        lone = fgetLine(MAXLINE, fp);
+                        printf("%-24s pid:%-30.30s\n", lone, dp->d_name);
+                    }
                 }
-                if (uid == sb.st_uid) {
-                    lone = fgetLine(MAXLINE, fp);
-                    printf("%-24s pid:%-30.30s\n", lone, dp->d_name);
-                }
+            } else {
+                fprintf(stderr, "Error: %s failed before fopen\n", dp->d_name);
             }
         }
         closedir(dirp);
