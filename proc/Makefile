@@ -5,13 +5,18 @@ CFLAGS := -g3
 LDFLAGS :=
 LDLIBS := -ladio
 
-EXECUTABLES = cmdwait procuall
+EXECUTABLES = cmdwait procuall proclos
 
 all: $(EXECUTABLES)
 
 cmdwait: cmdwait.o
 	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 cmdwait.o: cmdwait.c cscratch_common.h
+	$(CC) -c $(CFLAGS) $<
+
+proclos: proclos.o
+	$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+proclos.o: proclos.c cscratch_common.h
 	$(CC) -c $(CFLAGS) $<
 
 procuall: procuall.o ugid_info.o
