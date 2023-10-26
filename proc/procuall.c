@@ -13,6 +13,7 @@
  * */
 
 #define MAXLINE 512
+#define MAXFNAME 128
 #define LPID 5
 #define PROC "/proc"
 
@@ -30,7 +31,7 @@ bool s_isinteger(const char* s) {
 
 char*
 make_filename(const char* pid) {
-    char* fname;
+    char* fname = (char*)malloc(MAXFNAME);
     if (s_isinteger(pid)) {
         sprintf(fname, "/proc/%s/status", pid);
         return fname;
@@ -76,6 +77,7 @@ main (int argc, char* argv[])
             } else {
                 fprintf(stderr, "Error: %s failed before fopen\n", dp->d_name);
             }
+            free(fname);
         }
         closedir(dirp);
     }
