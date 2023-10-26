@@ -56,7 +56,6 @@ int main(int argc, char* argv[]) {
     int fd;
     char* lone;
     struct stat sb;
-    int size = 0;
 
     dirp = opendir(PROC);
     if (dirp) {

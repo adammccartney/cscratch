@@ -40,8 +40,11 @@ make_filename(const char* pid) {
 }
 
 int
-main (int argc, char* argv[])
-{
+main (int argc, char* argv[]) {
+    if (argc != 2) {
+        printf("usage: procuall <username>\n");
+        exit(EPERM);
+    }
     char* uname = argv[1];
     uid_t uid = uidFromName(uname);
     printf("user: %s\tuid: %d\n", uname, uid);
@@ -53,7 +56,6 @@ main (int argc, char* argv[])
     int fd;
     char* lone;
     struct stat sb;
-    int size = 0;
 
     dirp = opendir(PROC);
     if (dirp) {
