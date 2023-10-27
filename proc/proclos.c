@@ -8,11 +8,9 @@
 #include <stdarg.h>
 #include <sys/stat.h>
 
-#include "adio.h"
 #include "cscratch_common.h"
 
 #define MAXLINE 512
-#define MAXFNAME 128
 #define LPID 5
 #define PROC "/proc"
 
@@ -40,7 +38,7 @@ int main(int argc, char* argv[]) {
         exit(EPERM);
     } 
     /* Otherwise set up the path we want to read */
-    char fname[MAXFNAME];
+    char fname[FILENAME_MAX];
     sprintf(fname, "/proc/%s/status", pid);
 
     int time;
@@ -54,7 +52,10 @@ int main(int argc, char* argv[]) {
     struct dirent* dp;
     FILE* fp;
     int fd;
-    char* lone;
+    char* line = NULL;
+    size_t len = 0;
+    ssize_t rread = 0;
+    char* out = NULL;
     struct stat sb;
 
     dirp = opendir(PROC);
@@ -71,9 +72,18 @@ int main(int argc, char* argv[]) {
             if (fstat(fd, &sb) == -1) {
                 return -1; /* just cheese it! */
             }
-            lone = fgetLine(MAXLINE, fp);
-            printf("%-24s pid:%-30.30s\n", lone, pid);
+            out = (char*)malloc(MAXLINE);
+            if (out == NULL) {
+                fprintf(stderr, "Error: malloc\n");
+                goto err_malloc;
+            }
+            if ((rread = getline(&line, &len, fp)) != -1) {
+                sprintf(out, "%-24s pid:%-30.30s\n", line, pid);
+                int llen = strlen(out);
+                fwrite(out, llen, 1, stdout);
+            }
         }
+err_malloc:
         closedir(dirp);
     }
     return 0;
