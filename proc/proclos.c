@@ -36,10 +36,10 @@ int main(int argc, char* argv[]) {
     if (!s_isinteger(pid)) {
         fprintf(stderr, "Error: invalid pid %s\n", pid);
         exit(EPERM);
-    } 
+    }
     /* Otherwise set up the path we want to read */
-    char fname[FILENAME_MAX];
-    sprintf(fname, "/proc/%s/status", pid);
+    char fname[MAXLINE];
+    snprintf(fname, MAXLINE, "/proc/%s/status", pid);
 
     int time;
     time = atoi(argv[2]);
@@ -55,7 +55,6 @@ int main(int argc, char* argv[]) {
     char* line = NULL;
     size_t len = 0;
     ssize_t rread = 0;
-    char* out = NULL;
     struct stat sb;
 
     dirp = opendir(PROC);
@@ -63,27 +62,29 @@ int main(int argc, char* argv[]) {
         errno = 0;
         if ((dp = readdir(dirp)) != NULL) {
             sleep(time); /* Sleep while the process gets killed */
-            fp = fopen(fname, "r");
-            if (fp == NULL) {
+
+            if ((fp = fopen(fname, "r")) == NULL) {
                 fprintf(stderr, "Error: fopen failed to complete with code %d\n", errno);
-                exit(ESRCH); /* Process not found */
+                goto err_file;
             }
-            fd = fileno(fp);
+
+            if ((fd = fileno(fp)) == -1) {
+                fprintf(stderr, "Error fileno %d\n", errno);
+                goto err_proc;
+            }
+
             if (fstat(fd, &sb) == -1) {
-                return -1; /* just cheese it! */
+                fprintf(stderr, "Error fstat %d\n", errno);
+                goto err_proc;
             }
-            out = (char*)malloc(MAXLINE);
-            if (out == NULL) {
-                fprintf(stderr, "Error: malloc\n");
-                goto err_malloc;
-            }
+
             if ((rread = getline(&line, &len, fp)) != -1) {
-                sprintf(out, "%-24s pid:%-30.30s\n", line, pid);
-                int llen = strlen(out);
-                fwrite(out, llen, 1, stdout);
+                fprintf(stdout, "%spid:\t%s\n", line, pid);
             }
         }
-err_malloc:
+err_proc:
+        fclose(fp);
+err_file:
         closedir(dirp);
     }
     return 0;

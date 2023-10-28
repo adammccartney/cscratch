@@ -25,10 +25,11 @@ bool s_isinteger(const char* s) {
     }
     return result;
 }
+
 int
-make_filename(char* fname, const char* pid) {
+make_filename(char fname[MAXLINE], const char* pid) {
     if (s_isinteger(pid)) {
-        sprintf(fname, "/proc/%s/status", pid);
+        snprintf(fname, MAXLINE, "/proc/%s/status", pid);
         return 0;
     }
     return -1;
@@ -49,12 +50,9 @@ main (int argc, char* argv[]) {
     FILE* fp;
     int fd;
 
-    char* fname = NULL;
     char* line = NULL;
-    char* out = NULL;
     ssize_t rread = 0;
     size_t len = 0;
-    ssize_t lout = 0;
     struct stat sb;
 
     dirp = opendir(PROC);
@@ -62,11 +60,11 @@ main (int argc, char* argv[]) {
         errno = 0;
         while ((dp = readdir(dirp)) != NULL) {
 
-            fname = (char*)malloc(FILENAME_MAX);
             int rc;
+            char fname[MAXLINE];
             if ((rc = make_filename(fname, dp->d_name)) == -1) {
-                fprintf(stderr, "Error make_filename %d\n", errno);
-                goto err_file;
+                fprintf(stderr, "Error make_filename\n");
+                goto err_fname;
             }
 
             if (access(fname, F_OK) != 0) {
@@ -80,34 +78,29 @@ main (int argc, char* argv[]) {
             }
 
             if ((fd = fileno(fp)) == -1) {
-                fprintf(stderr, "Error fileno %d", errno);
+                fprintf(stderr, "Error fileno %d\n", errno);
                 fclose(fp);
                 goto err_proc;
             }
 
             if (fstat(fd, &sb) == -1) {
-                fprintf(stderr, "Error fstat %d", errno);
+                fprintf(stderr, "Error fstat %d\n", errno);
                 goto err_proc;
             }
 
             if (uid == sb.st_uid) {
                 if ((rread = getline(&line, &len, fp)) != -1) {
-                    out = (char*)malloc(MAXLINE);
-                    sprintf(out, "%spid:\t%s\n", line, dp->d_name);
-                    lout = strlen(out);
-                    fwrite(out, lout, 1, stdout);
-                    free(out);
+                    fprintf(stderr, "%spid:\t%s\n", line, dp->d_name);
                 } else {
-                    fprintf(stderr, "Error letline %d", errno);
+                    fprintf(stderr, "Error getline %d\n", errno);
                 }
             }
 err_proc:
             fclose(fp);
-err_file:
-            free(fname);
         }
+err_fname:
+err_file:
         /* cleanup directory stuff */
-        free(dp);
         closedir(dirp);
     }
     return 0;
