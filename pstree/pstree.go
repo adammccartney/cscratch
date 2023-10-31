@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
+	//"path/filepath"
+	"regexp"
 	// "github.com/adammccartney/algorill/pkg/datastruct/chqueue"
 )
 
@@ -14,23 +15,35 @@ type Process struct {
 }
 
 const PROC_BASE = "/proc"
+const MAXFILE = 4096
 
 func readProc() {
 	pfiles, err := os.ReadDir(PROC_BASE)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	processes := make([]string, len(pfiles))
-	for i, file := range pfiles {
-		fmt.Println(file.Name())
-		name := file.Name()
-		res, err := filepath.Match(name, "[0-9]+")
-		if err != nil {
-			log.Print(err)
-		} else {
-			processes[i] = file.Name()
-			fmt.Println(res)
+	//processes := make([]string, len(pfiles))
+	for _, file := range pfiles {
+		if file.IsDir() {
+			name := file.Name()
+			res, err := regexp.MatchString("[0-9]+", name)
+			if err != nil {
+				log.Print(err)
+			} else if res != false {
+				path := PROC_BASE + "/" + name + "/stat"
+				file, err := os.Open(path)
+				if err != nil {
+					// possible disappearing process
+					log.Print(err)
+				} else {
+					buffer := make([]byte, MAXFILE)
+					rread, err := file.Read(buffer)
+					if err != nil {
+						log.Print(err)
+					}
+					fmt.Print(string(buffer[:rread]))
+				}
+			}
 		}
 	}
 }
