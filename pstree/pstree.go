@@ -1,12 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
-	//"path/filepath"
 	"regexp"
-	// "github.com/adammccartney/algorill/pkg/datastruct/chqueue"
+	"syscall"
 )
 
 type Process struct {
@@ -17,32 +17,48 @@ type Process struct {
 const PROC_BASE = "/proc"
 const MAXFILE = 4096
 
+// readProc is modeled on the original read_proc from pstree
+// written by Werner Almesberger and Craig Small
 func readProc() {
 	pfiles, err := os.ReadDir(PROC_BASE)
 	if err != nil {
 		log.Fatal(err)
 	}
-	//processes := make([]string, len(pfiles))
+	exp, err := regexp.Compile("[0-9]+")
+	if err != nil {
+		log.Fatal(err) // this should never happen!
+	}
+
 	for _, file := range pfiles {
 		if file.IsDir() {
 			name := file.Name()
-			res, err := regexp.MatchString("[0-9]+", name)
-			if err != nil {
-				log.Print(err)
-			} else if res != false {
+
+			res := exp.Match([]byte(name))
+			if res {
 				path := PROC_BASE + "/" + name + "/stat"
-				file, err := os.Open(path)
-				if err != nil {
-					// possible disappearing process
-					log.Print(err)
-				} else {
-					buffer := make([]byte, MAXFILE)
-					rread, err := file.Read(buffer)
-					if err != nil {
-						log.Print(err)
-					}
-					fmt.Print(string(buffer[:rread]))
+				file, fopen_err := os.Open(path)
+				if fopen_err != nil {
+					log.Print(fopen_err, "process disappeared")
+					continue
 				}
+				path = PROC_BASE + "/" + name
+				var st syscall.Stat_t
+				stat_err := syscall.Stat(path, &st)
+				if stat_err != nil {
+					log.Print(stat_err, "process disappeared")
+					continue
+				}
+
+				// then read the stat file
+				buffer := make([]byte, MAXFILE)
+				// take care with this read!
+				// TODO: cleanup
+//				rread, read_err := file.Read(buffer)
+				scanner := bufio.NewScanner(file)
+				if read_err != nil {
+					log.Print(read_err)
+				}
+				fmt.Print(string(buffer[:rread]))
 			}
 		}
 	}
