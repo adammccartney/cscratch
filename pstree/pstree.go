@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
 	"regexp"
+	"strings"
 	"syscall"
 )
 
@@ -53,15 +53,28 @@ func readProc() {
 				buffer := make([]byte, MAXFILE)
 				// take care with this read!
 				// TODO: cleanup
-//				rread, read_err := file.Read(buffer)
-				scanner := bufio.NewScanner(file)
+				rread, read_err := file.Read(buffer)
+				// parse the command
+				// a command is the form (cmd)
+				// it may include spaces or further "(" or ")"
+				// get position of first "("
+				// get position of last ")"
+
 				if read_err != nil {
 					log.Print(read_err)
 				}
-				fmt.Print(string(buffer[:rread]))
+				text := string(buffer[:rread])
+				c_start := strings.Index(text, "(")
+				c_end := strings.LastIndex(text, ")")
+				comm := text[c_start : c_end+1]
+				fmt.Println(comm)
+				//fmt.Print(string(buffer[:rread]))
 			}
+
 		}
+
 	}
+
 }
 
 // syscall: open "/proc" O_RDONLY|O_NONBLOCK|O_CLOEXEC|
@@ -79,5 +92,14 @@ func readProc() {
 // add proc (command, pid, ppid)
 
 func main() {
+
 	readProc()
+	s := "123 (echo (this)) 456"
+	c_start := strings.Index(s, "(")
+	c_end := strings.LastIndex(s, ")")
+	fmt.Println(s[c_start : c_end+1])
+	s = "789 (whoami) 1222"
+	c_start = strings.Index(s, "(")
+	c_end = strings.LastIndex(s, ")")
+	fmt.Println(s[c_start : c_end+1])
 }
