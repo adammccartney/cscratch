@@ -1,7 +1,7 @@
-CC := clang
+CC := gcc
 CFLAGS = -Wall -Wextra -Werror -pedantic -std=c99 -g -O2 -I../lib/
 PREFIX := /usr/local
-LDFLAGS := -L$(DESTDIR)$(PREFIX)/lib
+LDFLAGS = -Wl,-rpath=$(PREFIX)/lib -L$(PREFIX)/lib
 
 #GEN_EXE = mq_notify_sig mq_notify_sigwaitinfo mq_notify_thread \
 #	  mq_notify_via_signal mq_notify_via_thread \
@@ -22,7 +22,7 @@ install: ${EXE}
 	cp -f pmsg_send $(DESTDIR)$(PREFIX)/bin
 	cp -f pmsg_unlink $(DESTDIR)$(PREFIX)/bin
 
-LDLIBS = -ladlpi
+LDLIBS = -ladlpi -lrt
 	# All of the programs in this directory need the
 	# realtime library, librt.
 
